@@ -6,6 +6,7 @@ from torch import nn
 import teras.metrics as M
 import teras.callbacks as C
 from teras.data import to_dataset
+from collections import defaultdict
 
 
 def assert_unique(arr: list, msg):
@@ -38,6 +39,8 @@ class Model():
         batch_size=2, valid_batch_size=2,
         callbacks: list[C.Callback] = [],
         seed=1337,
+        model_transform: lambda output: output,
+        eval_output_transform=lambda x, y, y_pred: (y_pred, y),
         **kwargs,
     ):
         assert_unique(callbacks, "callbacks must be unique")
@@ -46,7 +49,6 @@ class Model():
             ignite.utils.manual_seed(seed)
         device = self.device
         model = self.model
-        metrics.append(M.Loss(self.loss_fn))
         history = C.History()
         callbacks.extend([
             C.EpochBar(),
@@ -54,37 +56,32 @@ class Model():
             C.IterationLogger(),
             history,
         ])
+        metrics.append(M.Loss(self.loss_fn))
         metrics = {m._get_name(): m for m in metrics}
         self.train_evaluator = create_supervised_evaluator(
-            model, metrics=metrics, device=device)
-        from collections import defaultdict
+            model, metrics=metrics, device=device,
+            output_transform=eval_output_transform,
+            model_transform=model_transform)
         self.epoch_state = defaultdict(list)
 
-        def output_transform(x, y, y_pred, loss):
-            # nonlocal metrics
-            # metrics = metrics
-            # for k, v in metrics.items():
-            #     if k == "loss":
-            #         value = loss
-            #     else:
-            #         value = v(y_pred, y)
-            #     self.epoch_state[k].append(value)
-            return loss
         self.trainer = create_supervised_trainer(
             model,
             self.optimizer,
             self.loss_fn,
             device,
-            output_transform=output_transform,
+            model_transform=model_transform,
             **kwargs,
         )
         self.train_dl, self.valid_dl = to_dataset(
-            X, y, validation_set, validation_split, batch_size, valid_batch_size)
+            X, y, validation_set, validation_split,
+            batch_size, valid_batch_size)
         do_valid = self.valid_dl is not None
         if do_valid:
             valid_metrics = {f"val_{k}": v for k, v in metrics.items()}
             self.valid_evaluator = create_supervised_evaluator(
-                model, metrics=valid_metrics, device=device)
+                model, metrics=valid_metrics, device=device,
+                output_transform=eval_output_transform,
+                model_transform=model_transform)
 
         self.register_callbacks(callbacks)
         self.new_bar(1, len(self.train_dl))
@@ -146,3 +143,22 @@ _events = [
     Events.TERMINATE_SINGLE_EPOCH,
     Events.INTERRUPT,
 ]
+
+
+def train(
+    model,
+    optimizer, loss_fn,
+    X,
+    y=None,
+    metrics=[],
+    callbacks=[],
+    **kwargs,
+):
+    return Model(
+        model, optimizer, loss_fn,
+    ).fit(
+        X, y,
+        metrics=metrics,
+        callbacks=callbacks,
+        **kwargs
+    )

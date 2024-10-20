@@ -1,24 +1,38 @@
 import torch
+from torch import nn
 import torch.utils.data.dataset
 import teras
 
 
-def test_mnist():
+def test_complex():
     import sklearn
     import sklearn.datasets
     import numpy as np
     X, y = sklearn.datasets.load_digits(return_X_y=True)
-    model1 = torch.nn.Sequential(
-        torch.nn.Linear(X.shape[1], 32),
-        torch.nn.ReLU(),
-        torch.nn.Linear(32, len(np.unique(y))),
-    )
-    optimizer = torch.optim.Adam(model1.parameters())
-    model = teras.Model(
-        model1, optimizer, torch.nn.functional.cross_entropy
-    )
-    hist = model.fit(
-        X, y.astype(np.longlong),
+    y = y.astype(np.longlong)
+    pathname = "models/pathname.pt"
+
+    class CustomModel(nn.Module):
+        def __init__(self) -> None:
+            super().__init__()
+            self.seq = nn.Sequential(
+                nn.LazyLinear(10,),
+                nn.LazyLinear(10,),
+            )
+
+        def forward(self, X):
+            X = self.seq(X)
+            return X, X.sum()
+    model = CustomModel()
+    optimizer = torch.optim.Adam(model.parameters())
+
+    def model_transform(X):
+        X, _ = X
+        return X
+
+    hist = teras.train(
+        model, optimizer, torch.nn.functional.cross_entropy,
+        X, y=y,
         metrics=[
             teras.M.Accuracy(),
         ],
@@ -39,15 +53,14 @@ def test_mnist():
         epochs=20,
         batch_size=32,
         valid_batch_size=32,
-        # scaler=True,
-        # amp_mode='amp',
+        model_transform=model_transform,
     )
-    pathname = "models/pathname.pt"
-    hist.save(pathname, model=model1)
-    teras.load(pathname, model=model1)  # .plot()
+
+    hist.save(pathname, model=model)
+    teras.load(pathname, model=model)  # .plot()
     from pathlib import Path
     assert Path(pathname).exists()
 
 
 if __name__ == "__main__":
-    test_mnist()
+    test_complex()

@@ -1,9 +1,8 @@
-name: Tests
+name: Torch Clone Tests
 
-on:
-  pull_request:
-  push:
-    branches: [master]
+on: [push]
+env:
+  pyversion: 3.9
 
 jobs:
   tests-linux:
@@ -11,7 +10,7 @@ jobs:
     strategy:
       fail-fast: false
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Set up Python ${{ env.pyversion }}
         uses: actions/setup-python@v3
         with:

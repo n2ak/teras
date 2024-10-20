@@ -39,7 +39,7 @@ class Model():
         batch_size=2, valid_batch_size=2,
         callbacks: list[C.Callback] = [],
         seed=1337,
-        model_transform: lambda output: output,
+        model_transform=lambda output: output,
         eval_output_transform=lambda x, y, y_pred: (y_pred, y),
         **kwargs,
     ):

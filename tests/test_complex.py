@@ -22,6 +22,7 @@ def test_complex():
 
         def forward(self, X):
             X = self.seq(X)
+
             return X, X.sum()
     model = CustomModel()
     optimizer = torch.optim.Adam(model.parameters())

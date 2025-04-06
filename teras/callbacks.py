@@ -127,7 +127,7 @@ class TrainingResult:
 
     @staticmethod
     def load(pathname, **modules: torch.nn.Module):
-        state: dict = torch.load(pathname)
+        state: dict = torch.load(pathname, weights_only=False)
         for k, v in modules.items():
             v.load_state_dict(state["modules"][k])
         print("State loaded from", pathname)

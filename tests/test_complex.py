@@ -1,30 +1,27 @@
 import torch
-from torch import nn
-import torch.utils.data.dataset
 import teras
+from torch import nn
+from pathlib import Path
+from examples.mnist import load_mnist
+
+
+class CustomModel(nn.Module):
+    def __init__(self, inc, outc) -> None:
+        super().__init__()
+        self.seq = nn.Sequential(
+            nn.Linear(inc, 32),
+            nn.Linear(32, outc),
+        )
+
+    def forward(self, X):
+        X = self.seq(X)
+        return X, X.sum()
 
 
 def test_complex():
-    import sklearn
-    import sklearn.datasets
-    import numpy as np
-    X, y = sklearn.datasets.load_digits(return_X_y=True)
-    y = y.astype(np.longlong)
-    pathname = "models/pathname.pt"
+    X, y = load_mnist()
 
-    class CustomModel(nn.Module):
-        def __init__(self) -> None:
-            super().__init__()
-            self.seq = nn.Sequential(
-                nn.LazyLinear(10,),
-                nn.LazyLinear(10,),
-            )
-
-        def forward(self, X):
-            X = self.seq(X)
-
-            return X, X.sum()
-    model = CustomModel()
+    model = CustomModel(64, 10)
     optimizer = torch.optim.Adam(model.parameters())
 
     def model_transform(X):
@@ -56,12 +53,7 @@ def test_complex():
         valid_batch_size=32,
         model_transform=model_transform,
     )
-
+    pathname = "models/pathname.pt"
     hist.save(pathname, model=model)
     teras.load(pathname, model=model)  # .plot()
-    from pathlib import Path
     assert Path(pathname).exists()
-
-
-if __name__ == "__main__":
-    test_complex()

@@ -5,7 +5,7 @@ import ignite.utils
 import torch
 import ignite
 from torch import nn
-from teras.data import to_dataset
+from teras.data import get_dl
 from collections import defaultdict
 
 
@@ -89,7 +89,7 @@ class Model():
             model_transform=model_transform,
             **kwargs,
         )
-        self.train_dl, self.valid_dl = to_dataset(
+        self.train_dl, self.valid_dl = get_dl(
             X, y, validation_set, validation_split,
             batch_size, valid_batch_size)
         do_valid = self.valid_dl is not None

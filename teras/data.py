@@ -4,7 +4,7 @@ import torch.utils
 from torch.utils.data import TensorDataset, Dataset, DataLoader, random_split
 
 
-def to_dataset(X, y, validation_set, validation_split, batch_size, valid_batch_size):
+def to_ds(X, y, validation_set, validation_split):
     import numpy as np
     valid_dl = valid_ds = None
     if isinstance(X, np.ndarray):
@@ -26,6 +26,11 @@ def to_dataset(X, y, validation_set, validation_split, batch_size, valid_batch_s
         assert 0 < validation_split < 1
         train_ds, valid_ds = random_split(
             train_ds, [1-validation_split, validation_split])
+    return train_ds, valid_ds
+
+
+def get_dl(X, y, validation_set, validation_split, batch_size, valid_batch_size):
+    train_ds, valid_ds = to_ds(X, y, validation_set, validation_split)
     if valid_ds is not None:
         valid_dl = DataLoader(
             valid_ds, batch_size=valid_batch_size)

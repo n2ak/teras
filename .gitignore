@@ -1,13 +1,12 @@
 .vscode
+*.pt
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
-
 # C extensions
 *.so
 models
-*.pt
 # Distribution / packaging
 .Python
 build/
